@@ -3,25 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>POS System - Aplikasi Kasir</title>
+    <title>POS System - Excel Data Support</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS untuk Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            /* Mencegah pull-to-refresh dan overscroll bounce */
             overscroll-behavior: none;
-            -webkit-overscroll-behavior: none;
         }
 
-        /* Mencegah scroll bounce di iOS */
         html, body {
             position: fixed;
             overflow: hidden;
             width: 100%;
             height: 100%;
-            /* Mencegah elastic scrolling di iOS */
             -webkit-overflow-scrolling: auto;
         }
 
@@ -36,29 +34,24 @@
             --light: #f8fafc;
             --gray: #64748b;
             --border: #e2e8f0;
+            --excel: #217346;
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: var(--dark);
-            /* Mencegah touch callout dan selection yang tidak diinginkan */
             -webkit-touch-callout: none;
             -webkit-user-select: none;
             user-select: none;
-            /* Mencegah pull-to-refresh khusus Chrome Android */
-            overscroll-behavior-y: none;
         }
 
-        /* Container utama dengan scroll yang terkontrol */
         .app-container {
             width: 100%;
             height: 100%;
             overflow-y: auto;
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
-            /* Mencegah scroll chaining */
-            overscroll-behavior: contain;
         }
 
         .container {
@@ -69,9 +62,9 @@
             grid-template-columns: 1fr 400px;
             gap: 20px;
             min-height: min-content;
+            padding-bottom: 80px;
         }
 
-        /* Header */
         .header {
             grid-column: 1 / -1;
             background: rgba(255, 255, 255, 0.95);
@@ -82,16 +75,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            animation: slideDown 0.5s ease;
-            /* Mencegah header ikut terscroll */
             position: sticky;
             top: 0;
             z-index: 100;
-        }
-
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         .logo {
@@ -116,7 +102,6 @@
         .logo h1 {
             font-size: 24px;
             font-weight: 700;
-            color: var(--dark);
         }
 
         .logo span {
@@ -130,7 +115,6 @@
         .datetime .time {
             font-size: 28px;
             font-weight: 700;
-            color: var(--dark);
         }
 
         .datetime .date {
@@ -138,27 +122,63 @@
             color: var(--gray);
         }
 
-        /* Main Content */
-        .main-content {
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: var(--light);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .icon-btn:hover {
+            background: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .icon-btn.excel {
+            background: var(--excel);
+            color: white;
+        }
+
+        .icon-btn.excel:hover {
+            background: #1e663d;
+        }
+
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .main-content, .cart-section {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 25px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .main-content {
             display: flex;
             flex-direction: column;
             gap: 20px;
-            animation: fadeIn 0.6s ease;
-            /* Mencegah overscroll di dalam konten */
-            overscroll-behavior: contain;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        /* Search Bar */
         .search-container {
             position: relative;
         }
@@ -169,9 +189,7 @@
             border: 2px solid var(--border);
             border-radius: 15px;
             font-size: 16px;
-            transition: all 0.3s;
             background: white;
-            /* Mengizinkan selection di input */
             -webkit-user-select: text;
             user-select: text;
         }
@@ -179,7 +197,6 @@
         .search-bar:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
         }
 
         .search-icon {
@@ -191,17 +208,12 @@
             font-size: 20px;
         }
 
-        /* Category Filter */
         .category-filter {
             display: flex;
             gap: 10px;
             overflow-x: auto;
             padding-bottom: 5px;
-            /* Mencegah scroll chaining ke window */
-            overscroll-behavior-x: contain;
-            /* Hide scrollbar tapi tetap bisa scroll */
             scrollbar-width: none;
-            -ms-overflow-style: none;
         }
 
         .category-filter::-webkit-scrollbar {
@@ -215,28 +227,21 @@
             border-radius: 25px;
             cursor: pointer;
             font-weight: 500;
-            transition: all 0.3s;
             white-space: nowrap;
             font-size: 14px;
-            /* Mencegah highlight saat tap */
-            -webkit-tap-highlight-color: transparent;
+            transition: all 0.3s;
         }
 
-        .category-btn:hover, .category-btn.active {
+        .category-btn.active, .category-btn:hover {
             background: var(--primary);
             color: white;
             border-color: var(--primary);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
         }
 
-        /* Products Grid */
         .products-section {
             flex: 1;
             overflow-y: auto;
             max-height: calc(100vh - 350px);
-            /* Mencegah overscroll */
-            overscroll-behavior: contain;
         }
 
         .products-grid {
@@ -253,40 +258,12 @@
             cursor: pointer;
             transition: all 0.3s;
             position: relative;
-            overflow: hidden;
-            /* Mencegah highlight saat tap */
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
         }
 
         .product-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             border-color: var(--primary);
-        }
-
-        .product-card::before {
-            content: '+';
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 30px;
-            height: 30px;
-            background: var(--success);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: bold;
-            opacity: 0;
-            transition: all 0.3s;
-        }
-
-        .product-card:hover::before {
-            opacity: 1;
-            transform: scale(1);
         }
 
         .product-image {
@@ -305,7 +282,6 @@
             font-weight: 600;
             font-size: 14px;
             margin-bottom: 5px;
-            color: var(--dark);
         }
 
         .product-price {
@@ -320,24 +296,10 @@
             margin-top: 5px;
         }
 
-        /* Cart Section */
         .cart-section {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
             height: fit-content;
-            animation: slideIn 0.6s ease;
-            /* Mencegah overscroll */
-            overscroll-behavior: contain;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
         }
 
         .cart-header {
@@ -373,24 +335,13 @@
             border-radius: 8px;
             cursor: pointer;
             font-size: 13px;
-            transition: all 0.3s;
-            /* Mencegah highlight saat tap */
-            -webkit-tap-highlight-color: transparent;
         }
 
-        .clear-cart:hover {
-            background: #dc2626;
-            transform: scale(1.05);
-        }
-
-        /* Cart Items */
         .cart-items {
             flex: 1;
             max-height: 400px;
             overflow-y: auto;
             margin-bottom: 20px;
-            /* Mencegah overscroll */
-            overscroll-behavior: contain;
         }
 
         .cart-item {
@@ -401,13 +352,6 @@
             background: #f8fafc;
             border-radius: 12px;
             margin-bottom: 10px;
-            transition: all 0.3s;
-            animation: itemAdd 0.3s ease;
-        }
-
-        @keyframes itemAdd {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
         }
 
         .cart-item-image {
@@ -419,7 +363,6 @@
             align-items: center;
             justify-content: center;
             font-size: 24px;
-            flex-shrink: 0;
         }
 
         .cart-item-details {
@@ -429,7 +372,6 @@
         .cart-item-name {
             font-weight: 600;
             font-size: 14px;
-            margin-bottom: 3px;
         }
 
         .cart-item-price {
@@ -451,38 +393,17 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            /* Mencegah highlight saat tap */
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
         }
 
         .qty-btn:hover {
             background: var(--primary);
             color: white;
-            border-color: var(--primary);
-        }
-
-        .qty-value {
-            font-weight: 700;
-            min-width: 30px;
-            text-align: center;
         }
 
         .remove-item {
             color: var(--danger);
             cursor: pointer;
             padding: 5px;
-            transition: all 0.2s;
-            /* Mencegah highlight saat tap */
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .remove-item:hover {
-            transform: scale(1.2);
         }
 
         .empty-cart {
@@ -491,13 +412,6 @@
             color: var(--gray);
         }
 
-        .empty-cart-icon {
-            font-size: 60px;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
-
-        /* Cart Summary */
         .cart-summary {
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
             border-radius: 15px;
@@ -512,20 +426,14 @@
             font-size: 14px;
         }
 
-        .summary-row.discount {
-            color: var(--success);
-        }
-
         .summary-row.total {
             font-size: 20px;
             font-weight: 700;
-            color: var(--dark);
             margin-top: 15px;
             padding-top: 15px;
             border-top: 2px solid var(--border);
         }
 
-        /* Payment Section */
         .payment-section {
             margin-bottom: 15px;
         }
@@ -545,15 +453,6 @@
             font-size: 18px;
             font-weight: 700;
             text-align: right;
-            transition: all 0.3s;
-            /* Mengizinkan selection di input */
-            -webkit-user-select: text;
-            user-select: text;
-        }
-
-        .payment-input:focus {
-            outline: none;
-            border-color: var(--success);
         }
 
         .change-display {
@@ -570,15 +469,8 @@
 
         .change-display.show {
             display: block;
-            animation: pulse 0.5s ease;
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-        }
-
-        /* Checkout Button */
         .checkout-btn {
             width: 100%;
             padding: 18px;
@@ -589,25 +481,211 @@
             font-size: 18px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
-            /* Mencegah highlight saat tap */
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-
-        .checkout-btn:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.5);
         }
 
         .checkout-btn:disabled {
             background: var(--gray);
             cursor: not-allowed;
-            box-shadow: none;
         }
 
-        /* Modal */
+        /* Data Manager Panel */
+        .data-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            z-index: 3000;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .data-panel.show {
+            display: block;
+        }
+
+        .data-panel h2 {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .format-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: var(--light);
+            padding: 5px;
+            border-radius: 12px;
+        }
+
+        .format-tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .format-tab.active {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            color: var(--primary);
+        }
+
+        .format-section {
+            display: none;
+        }
+
+        .format-section.active {
+            display: block;
+        }
+
+        .data-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .data-btn {
+            padding: 15px 20px;
+            border: 2px solid var(--border);
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s;
+            text-align: left;
+        }
+
+        .data-btn:hover {
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .data-btn.excel {
+            border-color: var(--excel);
+            color: var(--excel);
+        }
+
+        .data-btn.excel:hover {
+            background: var(--excel);
+            color: white;
+        }
+
+        .data-btn .icon {
+            font-size: 24px;
+            width: 40px;
+            text-align: center;
+        }
+
+        .data-btn .content {
+            flex: 1;
+        }
+
+        .data-btn .title {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .data-btn .desc {
+            font-size: 12px;
+            color: var(--gray);
+            display: block;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2500;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: var(--light);
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(30, 41, 59, 0.95);
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            z-index: 2000;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .last-save {
+            color: var(--gray);
+        }
+
+        /* Modal Styles */
         .modal {
             display: none;
             position: fixed;
@@ -619,14 +697,10 @@
             z-index: 1000;
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(5px);
-            /* Mencegah scroll di modal */
-            overscroll-behavior: none;
         }
 
         .modal.show {
             display: flex;
-            animation: fadeIn 0.3s ease;
         }
 
         .modal-content {
@@ -634,58 +708,9 @@
             border-radius: 20px;
             padding: 30px;
             max-width: 400px;
-            width: 90%;
             text-align: center;
-            animation: scaleIn 0.3s ease;
         }
 
-        @keyframes scaleIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .modal-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--success), #059669);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 40px;
-            color: white;
-        }
-
-        .modal h2 {
-            margin-bottom: 10px;
-            color: var(--dark);
-        }
-
-        .modal p {
-            color: var(--gray);
-            margin-bottom: 25px;
-        }
-
-        .modal-btn {
-            padding: 12px 30px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            /* Mencegah highlight saat tap */
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .modal-btn:hover {
-            background: var(--primary-dark);
-            transform: scale(1.05);
-        }
-
-        /* Receipt */
         .receipt {
             display: none;
             position: fixed;
@@ -697,8 +722,6 @@
             z-index: 2000;
             align-items: center;
             justify-content: center;
-            /* Mencegah scroll di receipt */
-            overscroll-behavior: none;
         }
 
         .receipt.show {
@@ -710,144 +733,84 @@
             width: 320px;
             padding: 30px;
             font-family: 'Courier New', monospace;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            position: relative;
             max-height: 90vh;
             overflow-y: auto;
-            /* Mencegah overscroll */
-            overscroll-behavior: contain;
         }
 
-        .receipt-paper::before {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: 0;
-            width: 100%;
-            height: 20px;
-            background: radial-gradient(circle, transparent 6px, white 6px);
-            background-size: 20px 20px;
-            background-position: -10px -10px;
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--dark);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transform: translateX(400px);
+            transition: transform 0.3s;
+            z-index: 5000;
+            max-width: 350px;
         }
 
-        .receipt-header {
-            text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 2px dashed #ccc;
+        .toast.show {
+            transform: translateX(0);
         }
 
-        .receipt-title {
-            font-size: 20px;
-            font-weight: bold;
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--danger); }
+        .toast.excel { border-left: 4px solid var(--excel); }
+
+        .toast-title {
+            font-weight: 700;
             margin-bottom: 5px;
         }
 
-        .receipt-info {
-            font-size: 12px;
-            color: #666;
+        .toast-message {
+            font-size: 14px;
+            color: var(--gray);
         }
 
-        .receipt-items {
-            margin: 20px 0;
-        }
-
-        .receipt-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
+        /* Excel Preview */
+        .excel-preview {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
             font-size: 13px;
         }
 
-        .receipt-item-name {
-            flex: 1;
+        .excel-preview h4 {
+            margin-bottom: 10px;
+            color: var(--excel);
         }
 
-        .receipt-item-qty {
-            width: 30px;
-            text-align: center;
-        }
-
-        .receipt-item-price {
-            width: 80px;
-            text-align: right;
-        }
-
-        .receipt-total {
-            border-top: 2px dashed #ccc;
-            margin-top: 15px;
-            padding-top: 15px;
-        }
-
-        .receipt-total-row {
+        .excel-sheet-list {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            font-size: 14px;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .receipt-total-row.grand {
-            font-weight: bold;
-            font-size: 16px;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #ccc;
-        }
-
-        .receipt-footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px dashed #ccc;
-            font-size: 12px;
-        }
-
-        .receipt-barcode {
-            margin-top: 15px;
-            height: 50px;
-            background: repeating-linear-gradient(
-                90deg,
-                #000 0px,
-                #000 2px,
-                transparent 2px,
-                transparent 4px
-            );
-            opacity: 0.5;
-        }
-
-        .receipt-actions {
+        .excel-sheet-item {
             display: flex;
+            align-items: center;
             gap: 10px;
-            margin-top: 20px;
-        }
-
-        .receipt-btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
+            padding: 8px 12px;
+            background: white;
             border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            /* Mencegah highlight saat tap */
-            -webkit-tap-highlight-color: transparent;
+            border: 2px solid var(--border);
         }
 
-        .print-btn {
-            background: var(--primary);
-            color: white;
+        .excel-sheet-item.active {
+            border-color: var(--excel);
+            background: #e8f5e9;
         }
 
-        .close-btn {
-            background: var(--border);
-            color: var(--dark);
-        }
-
-        /* Responsive */
         @media (max-width: 1024px) {
             .container {
                 grid-template-columns: 1fr;
                 padding: 10px;
+                padding-bottom: 80px;
             }
             
             .cart-section {
@@ -860,43 +823,10 @@
                 z-index: 100;
             }
 
-            .header {
-                padding: 15px 20px;
+            .data-panel {
+                width: 95%;
+                padding: 20px;
             }
-
-            .datetime .time {
-                font-size: 20px;
-            }
-        }
-
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--primary-dark);
-        }
-
-        /* Mencegah text selection di seluruh app kecuali input */
-        .app-container {
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        /* Utility untuk touch action */
-        .no-touch-action {
-            touch-action: none;
         }
     </style>
 </head>
@@ -908,25 +838,31 @@
                 <div class="logo">
                     <div class="logo-icon">POS</div>
                     <div>
-                        <h1>Quick<span>Sale</span></h1>
-                        <small>Sistem Point of Sale</small>
+                        <h1>Quick<span>Sale</span> Excel</h1>
+                        <small>Support Excel (.xlsx)</small>
                     </div>
                 </div>
-                <div class="datetime">
-                    <div class="time" id="clock">00:00</div>
-                    <div class="date" id="date">Loading...</div>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div class="datetime">
+                        <div class="time" id="clock">00:00</div>
+                        <div class="date" id="date">Loading...</div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="icon-btn excel" onclick="openDataManager()" title="Manajemen Data Excel">
+                            📊
+                            <span class="badge" id="pendingBadge" style="display: none;">!</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- Main Content -->
             <div class="main-content">
-                <!-- Search -->
                 <div class="search-container">
                     <span class="search-icon">🔍</span>
                     <input type="text" class="search-bar" id="searchInput" placeholder="Cari produk...">
                 </div>
 
-                <!-- Categories -->
                 <div class="category-filter" id="categoryFilter">
                     <button class="category-btn active" data-category="all">Semua</button>
                     <button class="category-btn" data-category="makanan">Makanan</button>
@@ -935,11 +871,8 @@
                     <button class="category-btn" data-category="kebutuhan">Kebutuhan</button>
                 </div>
 
-                <!-- Products -->
-                <div class="products-section" id="productsSection">
-                    <div class="products-grid" id="productsGrid">
-                        <!-- Products will be inserted here -->
-                    </div>
+                <div class="products-section">
+                    <div class="products-grid" id="productsGrid"></div>
                 </div>
             </div>
 
@@ -955,9 +888,8 @@
 
                 <div class="cart-items" id="cartItems">
                     <div class="empty-cart">
-                        <div class="empty-cart-icon">🛒</div>
+                        <div style="font-size: 60px; margin-bottom: 15px;">🛒</div>
                         <p>Keranjang masih kosong</p>
-                        <small>Tap produk untuk menambahkan</small>
                     </div>
                 </div>
 
@@ -969,10 +901,6 @@
                     <div class="summary-row">
                         <span>PPN (10%)</span>
                         <span id="tax">Rp 0</span>
-                    </div>
-                    <div class="summary-row discount" id="discountRow" style="display: none;">
-                        <span>Diskon</span>
-                        <span id="discount">-Rp 0</span>
                     </div>
                     <div class="summary-row total">
                         <span>TOTAL</span>
@@ -995,74 +923,146 @@
         </div>
     </div>
 
-    <!-- Success Modal -->
-    <div class="modal" id="successModal">
-        <div class="modal-content">
-            <div class="modal-icon">✓</div>
-            <h2>Pembayaran Berhasil!</h2>
-            <p>Transaksi telah tercatat dalam sistem</p>
-            <button class="modal-btn" onclick="closeModal()">Tutup</button>
+    <!-- Data Manager Panel -->
+    <div class="overlay" id="dataOverlay" onclick="closeDataManager()"></div>
+    <div class="data-panel" id="dataPanel">
+        <button class="close-btn" onclick="closeDataManager()">✕</button>
+        <h2>📊 Manajemen Data</h2>
+        
+        <!-- Format Tabs -->
+        <div class="format-tabs">
+            <button class="format-tab active" onclick="switchFormat('excel')">Excel (.xlsx)</button>
+            <button class="format-tab" onclick="switchFormat('json')">JSON (.json)</button>
         </div>
+
+        <!-- Excel Section -->
+        <div class="format-section active" id="excelSection">
+            <div class="data-actions">
+                <button class="data-btn excel" onclick="exportToExcel()">
+                    <span class="icon">📊</span>
+                    <div class="content">
+                        <span class="title">Export ke Excel</span>
+                        <span class="desc">Simpan data dalam format .xlsx (bisa dibuka di Excel)</span>
+                    </div>
+                </button>
+
+                <div class="file-input-wrapper">
+                    <label class="data-btn excel" style="width: 100%; margin: 0;">
+                        <span class="icon">📂</span>
+                        <div class="content">
+                            <span class="title">Import dari Excel</span>
+                            <span class="desc">Muat data dari file .xlsx</span>
+                        </div>
+                        <input type="file" id="excelInput" accept=".xlsx,.xls" onchange="importFromExcel(this)">
+                    </label>
+                </div>
+
+                <button class="data-btn" onclick="downloadTemplateExcel()">
+                    <span class="icon">📋</span>
+                    <div class="content">
+                        <span class="title">Download Template</span>
+                        <span class="desc">Template Excel kosong untuk edit manual</span>
+                    </div>
+                </button>
+
+                <div class="excel-preview" id="excelPreview" style="display: none;">
+                    <h4>📋 Struktur File Excel:</h4>
+                    <div class="excel-sheet-list">
+                        <div class="excel-sheet-item active">
+                            <span>📑</span>
+                            <div>
+                                <strong>Sheet: Produk</strong><br>
+                                <small>ID, Nama, Kategori, Harga, Stok</small>
+                            </div>
+                        </div>
+                        <div class="excel-sheet-item active">
+                            <span>📑</span>
+                            <div>
+                                <strong>Sheet: Transaksi</strong><br>
+                                <small>ID, Tanggal, Item, Total, dll</small>
+                            </div>
+                        </div>
+                        <div class="excel-sheet-item active">
+                            <span>📑</span>
+                            <div>
+                                <strong>Sheet: Laporan</strong><br>
+                                <small>Ringkasan penjualan otomatis</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- JSON Section -->
+        <div class="format-section" id="jsonSection">
+            <div class="data-actions">
+                <button class="data-btn" onclick="saveToFile()">
+                    <span class="icon">💾</span>
+                    <div class="content">
+                        <span class="title">Export JSON</span>
+                        <span class="desc">Format raw data (untuk developer)</span>
+                    </div>
+                </button>
+
+                <div class="file-input-wrapper">
+                    <label class="data-btn" style="width: 100%; margin: 0;">
+                        <span class="icon">📂</span>
+                        <div class="content">
+                            <span class="title">Import JSON</span>
+                            <span class="desc">Muat dari file .json</span>
+                        </div>
+                        <input type="file" id="jsonInput" accept=".json" onchange="loadFromFile(this)">
+                    </label>
+                </div>
+
+                <button class="data-btn" onclick="saveToLocalStorage()">
+                    <span class="icon">🔄</span>
+                    <div class="content">
+                        <span class="title">Backup ke Browser</span>
+                        <span class="desc">Simpan sementara di localStorage</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
+
+        <button class="data-btn" onclick="resetAllData()" style="border-color: var(--danger); color: var(--danger);">
+            <span class="icon">🗑️</span>
+            <div class="content">
+                <span class="title">Reset Semua Data</span>
+                <span class="desc">Kembalikan ke pengaturan awal</span>
+            </div>
+        </button>
     </div>
 
-    <!-- Receipt -->
+    <!-- Receipt Modal -->
     <div class="receipt" id="receipt">
-        <div class="receipt-paper">
-            <div class="receipt-header">
-                <div class="receipt-title">QUICK SALE</div>
-                <div class="receipt-info">
-                    Jl. Sudirman No. 123<br>
-                    Telp: 0812-3456-7890
-                </div>
-                <div class="receipt-info" style="margin-top: 10px;">
-                    <span id="receiptDate"></span><br>
-                    No: <span id="receiptNumber">TRX-001</span>
-                </div>
-            </div>
+        <div class="receipt-paper" id="receiptContent"></div>
+    </div>
 
-            <div class="receipt-items" id="receiptItems">
-                <!-- Items will be inserted here -->
-            </div>
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <div class="toast-title" id="toastTitle">Notifikasi</div>
+        <div class="toast-message" id="toastMessage">Pesan detail</div>
+    </div>
 
-            <div class="receipt-total">
-                <div class="receipt-total-row">
-                    <span>Subtotal</span>
-                    <span id="receiptSubtotal">Rp 0</span>
-                </div>
-                <div class="receipt-total-row">
-                    <span>PPN (10%)</span>
-                    <span id="receiptTax">Rp 0</span>
-                </div>
-                <div class="receipt-total-row grand">
-                    <span>TOTAL</span>
-                    <span id="receiptTotal">Rp 0</span>
-                </div>
-                <div class="receipt-total-row" style="margin-top: 10px;">
-                    <span>Bayar</span>
-                    <span id="receiptPayment">Rp 0</span>
-                </div>
-                <div class="receipt-total-row">
-                    <span>Kembali</span>
-                    <span id="receiptChange">Rp 0</span>
-                </div>
-            </div>
-
-            <div class="receipt-footer">
-                <div class="receipt-barcode"></div>
-                <p style="margin-top: 10px;">Terima Kasih</p>
-                <p>Atas Kunjungan Anda</p>
-            </div>
-
-            <div class="receipt-actions">
-                <button class="receipt-btn print-btn" onclick="printReceipt()">🖨️ Print</button>
-                <button class="receipt-btn close-btn" onclick="closeReceipt()">Tutup</button>
-            </div>
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span id="statusText">Siap</span>
         </div>
+        <div class="last-save" id="lastSave">Belum ada file tersimpan</div>
     </div>
 
     <script>
-        // Data Produk
-        const products = [
+        // ==========================================
+        // DATA & STATE
+        // ==========================================
+        
+        const defaultProducts = [
             { id: 1, name: "Nasi Goreng", price: 25000, category: "makanan", stock: 20, emoji: "🍛" },
             { id: 2, name: "Mie Ayam", price: 20000, category: "makanan", stock: 15, emoji: "🍜" },
             { id: 3, name: "Ayam Goreng", price: 30000, category: "makanan", stock: 10, emoji: "🍗" },
@@ -1085,24 +1085,282 @@
             { id: 20, name: "Minyak Goreng", price: 35000, category: "kebutuhan", stock: 10, emoji: "🛢️" }
         ];
 
+        let products = JSON.parse(JSON.stringify(defaultProducts));
         let cart = [];
+        let transactions = [];
         let currentCategory = 'all';
+        let hasUnsavedChanges = false;
+        let lastFileSave = null;
 
-        // Format Rupiah
-        function formatRupiah(number) {
-            return 'Rp ' + number.toLocaleString('id-ID');
+        // ==========================================
+        // EXCEL OPERATIONS (SHEETJS)
+        // ==========================================
+
+        // Export ke Excel dengan multiple sheets
+        function exportToExcel() {
+            try {
+                // 1. Sheet Produk
+                const produkData = products.map(p => ({
+                    'ID': p.id,
+                    'Nama Produk': p.name,
+                    'Kategori': p.category,
+                    'Harga (Rp)': p.price,
+                    'Stok': p.stock,
+                    'Icon': p.emoji
+                }));
+
+                // 2. Sheet Transaksi
+                const transaksiData = transactions.map(t => ({
+                    'ID Transaksi': t.id,
+                    'Tanggal': new Date(t.date).toLocaleString('id-ID'),
+                    'Jumlah Item': t.items.length,
+                    'Total Item': t.items.reduce((sum, i) => sum + i.quantity, 0),
+                    'Subtotal (Rp)': t.subtotal,
+                    'PPN 10% (Rp)': t.tax,
+                    'Total (Rp)': t.total,
+                    'Bayar (Rp)': t.payment,
+                    'Kembali (Rp)': t.change
+                }));
+
+                // 3. Sheet Detail Transaksi (flatten)
+                const detailTransaksi = [];
+                transactions.forEach(t => {
+                    t.items.forEach(item => {
+                        detailTransaksi.push({
+                            'ID Transaksi': t.id,
+                            'Tanggal': new Date(t.date).toLocaleDateString('id-ID'),
+                            'Produk': item.name,
+                            'Kategori': item.category,
+                            'Harga Satuan': item.price,
+                            'Qty': item.quantity,
+                            'Total': item.price * item.quantity
+                        });
+                    });
+                });
+
+                // 4. Sheet Laporan Ringkasan
+                const totalPenjualan = transactions.reduce((sum, t) => sum + t.total, 0);
+                const totalTransaksi = transactions.length;
+                const rataRata = totalTransaksi > 0 ? totalPenjualan / totalTransaksi : 0;
+                
+                // Hitung penjualan per kategori
+                const penjualanPerKategori = {};
+                transactions.forEach(t => {
+                    t.items.forEach(item => {
+                        if (!penjualanPerKategori[item.category]) {
+                            penjualanPerKategori[item.category] = { qty: 0, total: 0 };
+                        }
+                        penjualanPerKategori[item.category].qty += item.quantity;
+                        penjualanPerKategori[item.category].total += (item.price * item.quantity);
+                    });
+                });
+
+                const laporanData = [
+                    { 'Metrik': 'Total Transaksi', 'Nilai': totalTransaksi },
+                    { 'Metrik': 'Total Penjualan (Rp)', 'Nilai': totalPenjualan },
+                    { 'Metrik': 'Rata-rata per Transaksi (Rp)', 'Nilai': Math.round(rataRata) },
+                    { 'Metrik': 'Total Produk Terjual', 'Nilai': transactions.reduce((sum, t) => sum + t.items.reduce((s, i) => s + i.quantity, 0), 0) },
+                    { 'Metrik': '', 'Nilai': '' },
+                    { 'Metrik': 'PENJUALAN PER KATEGORI', 'Nilai': '' },
+                    ...Object.entries(penjualanPerKategori).map(([cat, val]) => ({
+                        'Metrik': cat.toUpperCase(),
+                        'Nilai': `${val.qty} item = Rp ${val.total.toLocaleString('id-ID')}`
+                    }))
+                ];
+
+                // Buat workbook
+                const wb = XLSX.utils.book_new();
+                
+                // Tambah sheets
+                const wsProduk = XLSX.utils.json_to_sheet(produkData);
+                const wsTransaksi = XLSX.utils.json_to_sheet(transaksiData);
+                const wsDetail = XLSX.utils.json_to_sheet(detailTransaksi);
+                const wsLaporan = XLSX.utils.json_to_sheet(laporanData);
+
+                // Styling header (bold)
+                [wsProduk, wsTransaksi, wsDetail, wsLaporan].forEach(ws => {
+                    const range = XLSX.utils.decode_range(ws['!ref']);
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const cell = ws[XLSX.utils.encode_cell({r: 0, c: C})];
+                        if (cell) cell.s = { font: { bold: true } };
+                    }
+                });
+
+                XLSX.utils.book_append_sheet(wb, wsProduk, "Produk");
+                XLSX.utils.book_append_sheet(wb, wsTransaksi, "Transaksi");
+                XLSX.utils.book_append_sheet(wb, wsDetail, "Detail Transaksi");
+                XLSX.utils.book_append_sheet(wb, wsLaporan, "Laporan");
+
+                // Simpan file
+                const filename = `POS_Report_${formatDateFile()}.xlsx`;
+                XLSX.writeFile(wb, filename);
+
+                lastFileSave = new Date();
+                hasUnsavedChanges = false;
+                updateStatus('Excel exported', 'success');
+                updateLastSaveDisplay();
+                showToast('Excel Berhasil!', `File ${filename} telah di-download dengan 4 sheet.`, 'excel');
+                
+            } catch (err) {
+                console.error('Excel export error:', err);
+                showToast('Error', 'Gagal export Excel: ' + err.message, 'error');
+            }
         }
 
-        // Update Clock
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('clock').textContent = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-            document.getElementById('date').textContent = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
+        // Import dari Excel
+        async function importFromExcel(input) {
+            const file = input.files[0];
+            if (!file) return;
 
-        // Render Products
+            try {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data);
+                
+                // Baca sheet Produk
+                const produkSheet = workbook.Sheets['Produk'] || workbook.Sheets[0];
+                const produkJson = XLSX.utils.sheet_to_json(produkSheet);
+                
+                // Baca sheet Transaksi (jika ada)
+                const transaksiSheet = workbook.Sheets['Transaksi'];
+                const transaksiJson = transaksiSheet ? XLSX.utils.sheet_to_json(transaksiSheet) : [];
+
+                // Konfirmasi
+                if (produkJson.length === 0) {
+                    throw new Error('Sheet Produk tidak ditemukan atau kosong!');
+                }
+
+                if (!confirm(`Import ${produkJson.length} produk dan ${transaksiJson.length} transaksi? Data saat ini akan diganti.`)) {
+                    input.value = '';
+                    return;
+                }
+
+                // Parse produk
+                products = produkJson.map(row => ({
+                    id: parseInt(row['ID']) || row['ID'],
+                    name: row['Nama Produk'] || row['name'],
+                    category: row['Kategori'] || row['category'],
+                    price: parseInt(row['Harga (Rp)']) || parseInt(row['price']) || 0,
+                    stock: parseInt(row['Stok']) || parseInt(row['stock']) || 0,
+                    emoji: row['Icon'] || row['emoji'] || '📦'
+                }));
+
+                // Parse transaksi (jika ada)
+                if (transaksiJson.length > 0) {
+                    transactions = transaksiJson.map(row => ({
+                        id: row['ID Transaksi'] || 'TRX-IMPORT',
+                        date: new Date().toISOString(), // Simplified
+                        items: [], // Detail perlu sheet terpisah
+                        subtotal: parseInt(row['Subtotal (Rp)']) || 0,
+                        tax: parseInt(row['PPN 10% (Rp)']) || 0,
+                        total: parseInt(row['Total (Rp)']) || 0,
+                        payment: parseInt(row['Bayar (Rp)']) || 0,
+                        change: parseInt(row['Kembali (Rp)']) || 0
+                    }));
+                }
+
+                cart = [];
+                hasUnsavedChanges = true;
+                
+                renderAll();
+                showToast('Import Sukses!', `Loaded: ${products.length} produk, ${transactions.length} transaksi`, 'excel');
+                closeDataManager();
+                
+            } catch (err) {
+                showToast('Error Import', err.message, 'error');
+            }
+            
+            input.value = '';
+        }
+
+        // Download Template Excel
+        function downloadTemplateExcel() {
+            const templateData = [
+                { 'ID': 1, 'Nama Produk': 'Contoh Produk', 'Kategori': 'makanan', 'Harga (Rp)': 25000, 'Stok': 20, 'Icon': '🍔' }
+            ];
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(templateData);
+            
+            // Tambah instruksi
+            XLSX.utils.sheet_add_aoa(ws, [
+                ['CARA PENGGUNAAN:'],
+                ['1. Isi data produk sesuai contoh di bawah'],
+                ['2. Kategori: makanan, minuman, snack, kebutuhan'],
+                ['3. Simpan file dan import melalui menu Import Excel'],
+                [''],
+                ['']
+            ], { origin: 'A8' });
+            
+            XLSX.utils.book_append_sheet(wb, ws, "Template Produk");
+            XLSX.writeFile(wb, 'POS_Template_Produk.xlsx');
+            
+            showToast('Template Downloaded', 'File template Excel siap diisi!', 'excel');
+        }
+
+        // ==========================================
+        // JSON OPERATIONS (Backup)
+        // ==========================================
+
+        function saveToFile() {
+            const data = {
+                version: "2.0",
+                exportedAt: new Date().toISOString(),
+                products,
+                transactions,
+                cart
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pos_backup_${formatDateFile()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            lastFileSave = new Date();
+            hasUnsavedChanges = false;
+            updateStatus('JSON saved', 'success');
+            updateLastSaveDisplay();
+            showToast('Sukses', 'File JSON di-download!');
+        }
+
+        async function loadFromFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+                
+                if (data.products) products = data.products;
+                if (data.transactions) transactions = data.transactions;
+                if (data.cart) cart = data.cart;
+                
+                renderAll();
+                showToast('Sukses', 'Data JSON dimuat!');
+                closeDataManager();
+            } catch (err) {
+                showToast('Error', 'Gagal load file: ' + err.message, 'error');
+            }
+            input.value = '';
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('pos_backup', JSON.stringify({ products, transactions, cart }));
+            showToast('Info', 'Backup ke browser tersimpan');
+        }
+
+        // ==========================================
+        // CORE FUNCTIONS
+        // ==========================================
+
+        function renderAll() {
+            renderProducts();
+            renderCart();
+            updateCartSummary();
+        }
+
         function renderProducts() {
             const grid = document.getElementById('productsGrid');
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -1123,20 +1381,6 @@
             `).join('');
         }
 
-        // Category Filter
-        document.getElementById('categoryFilter').addEventListener('click', (e) => {
-            if (e.target.classList.contains('category-btn')) {
-                document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
-                e.target.classList.add('active');
-                currentCategory = e.target.dataset.category;
-                renderProducts();
-            }
-        });
-
-        // Search
-        document.getElementById('searchInput').addEventListener('input', renderProducts);
-
-        // Add to Cart
         function addToCart(productId) {
             const product = products.find(p => p.id === productId);
             const existingItem = cart.find(item => item.id === productId);
@@ -1145,27 +1389,27 @@
                 if (existingItem.quantity < product.stock) {
                     existingItem.quantity++;
                 } else {
-                    alert('Stok tidak mencukupi!');
+                    showToast('Stok Habis', 'Stok tidak mencukupi!', 'error');
                     return;
                 }
             } else {
                 cart.push({ ...product, quantity: 1 });
             }
 
+            hasUnsavedChanges = true;
             renderCart();
             updateCartSummary();
+            updateBadge();
         }
 
-        // Render Cart
         function renderCart() {
             const container = document.getElementById('cartItems');
             
             if (cart.length === 0) {
                 container.innerHTML = `
                     <div class="empty-cart">
-                        <div class="empty-cart-icon">🛒</div>
+                        <div style="font-size: 60px; margin-bottom: 15px;">🛒</div>
                         <p>Keranjang masih kosong</p>
-                        <small>Tap produk untuk menambahkan</small>
                     </div>
                 `;
                 document.getElementById('checkoutBtn').disabled = true;
@@ -1191,13 +1435,12 @@
             document.getElementById('checkoutBtn').disabled = false;
         }
 
-        // Update Quantity
         function updateQuantity(productId, change) {
             const item = cart.find(i => i.id === productId);
             const product = products.find(p => p.id === productId);
 
             if (change > 0 && item.quantity >= product.stock) {
-                alert('Stok tidak mencukupi!');
+                showToast('Stok Habis', 'Stok tidak mencukupi!', 'error');
                 return;
             }
 
@@ -1206,31 +1449,34 @@
             if (item.quantity <= 0) {
                 removeFromCart(productId);
             } else {
+                hasUnsavedChanges = true;
                 renderCart();
                 updateCartSummary();
+                updateBadge();
             }
         }
 
-        // Remove from Cart
         function removeFromCart(productId) {
             cart = cart.filter(item => item.id !== productId);
+            hasUnsavedChanges = true;
             renderCart();
             updateCartSummary();
+            updateBadge();
         }
 
-        // Clear Cart
         function clearCart() {
             if (cart.length === 0) return;
             if (confirm('Yakin ingin mengosongkan keranjang?')) {
                 cart = [];
+                hasUnsavedChanges = true;
                 renderCart();
                 updateCartSummary();
                 document.getElementById('paymentInput').value = '';
                 document.getElementById('changeDisplay').classList.remove('show');
+                updateBadge();
             }
         }
 
-        // Update Cart Summary
         function updateCartSummary() {
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             const tax = subtotal * 0.1;
@@ -1244,7 +1490,6 @@
             calculateChange();
         }
 
-        // Calculate Change
         function calculateChange() {
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             const tax = subtotal * 0.1;
@@ -1272,7 +1517,6 @@
             }
         }
 
-        // Process Checkout
         function processCheckout() {
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             const tax = subtotal * 0.1;
@@ -1280,141 +1524,255 @@
             const payment = parseFloat(document.getElementById('paymentInput').value) || 0;
 
             if (payment < total) {
-                alert('Pembayaran tidak mencukupi!');
+                showToast('Error', 'Pembayaran tidak mencukupi!', 'error');
                 return;
             }
 
-            // Show Receipt
-            showReceipt();
+            const transaction = {
+                id: 'TRX-' + Date.now().toString().slice(-6),
+                date: new Date().toISOString(),
+                items: [...cart],
+                subtotal, tax, total, payment,
+                change: payment - total
+            };
+
+            cart.forEach(item => {
+                const product = products.find(p => p.id === item.id);
+                if (product) product.stock -= item.quantity;
+            });
+
+            transactions.unshift(transaction);
+            cart = [];
+            hasUnsavedChanges = true;
+            
+            showReceipt(transaction);
+            saveToLocalStorage();
+            updateBadge();
         }
 
-        // Show Receipt
-        function showReceipt() {
-            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const tax = subtotal * 0.1;
-            const total = subtotal + tax;
-            const payment = parseFloat(document.getElementById('paymentInput').value) || 0;
-            const change = payment - total;
-
-            document.getElementById('receiptDate').textContent = new Date().toLocaleString('id-ID');
-            document.getElementById('receiptNumber').textContent = 'TRX-' + Date.now().toString().slice(-6);
-            
-            document.getElementById('receiptItems').innerHTML = cart.map(item => `
-                <div class="receipt-item">
-                    <span class="receipt-item-name">${item.name}</span>
-                    <span class="receipt-item-qty">${item.quantity}x</span>
-                    <span class="receipt-item-price">${formatRupiah(item.price * item.quantity)}</span>
+        function showReceipt(transaction) {
+            const receiptHTML = `
+                <div style="text-align: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px dashed #ccc;">
+                    <div style="font-size: 20px; font-weight: bold;">QUICK SALE EXCEL</div>
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                        ${new Date(transaction.date).toLocaleString('id-ID')}<br>
+                        No: ${transaction.id}
+                    </div>
                 </div>
-            `).join('');
-
-            document.getElementById('receiptSubtotal').textContent = formatRupiah(subtotal);
-            document.getElementById('receiptTax').textContent = formatRupiah(tax);
-            document.getElementById('receiptTotal').textContent = formatRupiah(total);
-            document.getElementById('receiptPayment').textContent = formatRupiah(payment);
-            document.getElementById('receiptChange').textContent = formatRupiah(change);
-
+                <div style="margin: 20px 0;">
+                    ${transaction.items.map(item => `
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+                            <span>${item.name}</span>
+                            <span>${item.quantity}x ${formatRupiah(item.price * item.quantity)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="border-top: 2px dashed #ccc; padding-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Subtotal</span>
+                        <span>${formatRupiah(transaction.subtotal)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>PPN (10%)</span>
+                        <span>${formatRupiah(transaction.tax)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 16px; margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px;">
+                        <span>TOTAL</span>
+                        <span>${formatRupiah(transaction.total)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                        <span>Bayar</span>
+                        <span>${formatRupiah(transaction.payment)}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Kembali</span>
+                        <span>${formatRupiah(transaction.change)}</span>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 30px; font-size: 12px;">
+                    <div style="height: 50px; background: repeating-linear-gradient(90deg, #000 0px, #000 2px, transparent 2px, transparent 4px); opacity: 0.3; margin-bottom: 10px;"></div>
+                    <p>Terima Kasih!</p>
+                    <p style="margin-top: 5px; color: #217346; font-weight: bold;">📊 Export ke Excel untuk laporan</p>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button onclick="closeReceipt()" style="flex: 1; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">Tutup</button>
+                    <button onclick="exportToExcel(); closeReceipt();" style="flex: 1; padding: 12px; background: var(--excel); color: white; border: none; border-radius: 8px; cursor: pointer;">📊 Export Excel</button>
+                </div>
+            `;
+            
+            document.getElementById('receiptContent').innerHTML = receiptHTML;
             document.getElementById('receipt').classList.add('show');
         }
 
-        // Close Receipt
         function closeReceipt() {
             document.getElementById('receipt').classList.remove('show');
-            
-            // Clear cart after successful transaction
-            cart = [];
             renderCart();
             updateCartSummary();
             document.getElementById('paymentInput').value = '';
             document.getElementById('changeDisplay').classList.remove('show');
+            showToast('Sukses', 'Transaksi tersimpan! Export ke Excel untuk backup.', 'excel');
+        }
+
+        // ==========================================
+        // UI HELPERS
+        // ==========================================
+
+        function openDataManager() {
+            document.getElementById('dataPanel').classList.add('show');
+            document.getElementById('dataOverlay').classList.add('show');
+            document.getElementById('excelPreview').style.display = 'block';
+        }
+
+        function closeDataManager() {
+            document.getElementById('dataPanel').classList.remove('show');
+            document.getElementById('dataOverlay').classList.remove('show');
+        }
+
+        function switchFormat(format) {
+            document.querySelectorAll('.format-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.format-section').forEach(s => s.classList.remove('active'));
             
-            // Show success modal
-            document.getElementById('successModal').classList.add('show');
+            event.target.classList.add('active');
+            document.getElementById(format + 'Section').classList.add('active');
         }
 
-        // Print Receipt
-        function printReceipt() {
-            window.print();
+        function showToast(title, message, type = 'success') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastMessage').textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // Close Modal
-        function closeModal() {
-            document.getElementById('successModal').classList.remove('show');
+        function updateStatus(text, type) {
+            document.getElementById('statusText').textContent = text;
+            document.querySelector('.status-dot').style.background = type === 'success' ? 'var(--success)' : 'var(--warning)';
         }
 
-        // ============================================
-        // PENCEGAHAN PULL-TO-REFRESH DAN OVERSCROLL
-        // ============================================
+        function updateLastSaveDisplay() {
+            const el = document.getElementById('lastSave');
+            if (lastFileSave) {
+                el.textContent = 'Last: ' + lastFileSave.toLocaleTimeString('id-ID');
+                el.style.color = 'var(--success)';
+            } else {
+                el.textContent = 'Belum ada file tersimpan - Klik 📊 untuk save!';
+                el.style.color = '#ef4444';
+            }
+        }
 
-        // 1. Mencegah pull-to-refresh di Chrome Android
+        function updateBadge() {
+            document.getElementById('pendingBadge').style.display = hasUnsavedChanges ? 'block' : 'none';
+        }
+
+        function formatRupiah(number) {
+            return 'Rp ' + number.toLocaleString('id-ID');
+        }
+
+        function formatDateFile() {
+            const now = new Date();
+            return `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('date').textContent = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
+        }
+
+        function resetAllData() {
+            if (!confirm('⚠️ PERINGATAN: Semua data akan dihapus!\n\nYakin ingin melanjutkan?')) return;
+            
+            products = JSON.parse(JSON.stringify(defaultProducts));
+            transactions = [];
+            cart = [];
+            hasUnsavedChanges = false;
+            lastFileSave = null;
+            
+            localStorage.removeItem('pos_backup');
+            
+            renderAll();
+            updateLastSaveDisplay();
+            updateBadge();
+            closeDataManager();
+            showToast('Reset Complete', 'Semua data telah direset');
+        }
+
+        // ==========================================
+        // EVENT LISTENERS
+        // ==========================================
+
+        document.getElementById('categoryFilter').addEventListener('click', (e) => {
+            if (e.target.classList.contains('category-btn')) {
+                document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                currentCategory = e.target.dataset.category;
+                renderProducts();
+            }
+        });
+
+        document.getElementById('searchInput').addEventListener('input', renderProducts);
+
+        window.addEventListener('beforeunload', (e) => {
+            if (hasUnsavedChanges && transactions.length > 0) {
+                e.preventDefault();
+                e.returnValue = 'Ada perubahan yang belum di-export ke Excel!';
+                return e.returnValue;
+            }
+        });
+
+        // Touch handling
         let touchStartY = 0;
-        let touchEndY = 0;
-        
-        document.addEventListener('touchstart', function(e) {
+        document.addEventListener('touchstart', (e) => {
             touchStartY = e.touches[0].clientY;
         }, { passive: true });
 
-        document.addEventListener('touchmove', function(e) {
-            touchEndY = e.touches[0].clientY;
-            
-            // Cek apakah scroll sudah di top
-            const appContainer = document.getElementById('appContainer');
-            const isAtTop = appContainer.scrollTop === 0;
-            const isPullingDown = touchEndY > touchStartY;
-            
-            // Jika di top dan menarik ke bawah, cegah default behavior
-            if (isAtTop && isPullingDown && e.cancelable) {
-                e.preventDefault();
-            }
-            
-            // Cegah bounce effect di iOS
-            const isAtBottom = (appContainer.scrollHeight - appContainer.scrollTop) === appContainer.clientHeight;
-            const isPullingUp = touchEndY < touchStartY;
-            
-            if (isAtBottom && isPullingUp && e.cancelable) {
+        document.addEventListener('touchmove', (e) => {
+            const touchY = e.touches[0].clientY;
+            const container = document.getElementById('appContainer');
+            if (container.scrollTop === 0 && touchY > touchStartY && e.cancelable) {
                 e.preventDefault();
             }
         }, { passive: false });
 
-        // 2. Mencegah refresh saat swipe down di header
-        document.querySelector('.header').addEventListener('touchmove', function(e) {
-            if (e.cancelable) e.preventDefault();
-        }, { passive: false });
+        // ==========================================
+        // INIT
+        // ==========================================
 
-        // 3. Mencegah double tap zoom
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function(e) {
-            const now = Date.now();
-            if (now - lastTouchEnd <= 300) {
-                e.preventDefault();
+        setInterval(updateClock, 1000);
+        updateClock();
+        
+        // Load backup
+        const saved = localStorage.getItem('pos_backup');
+        if (saved) {
+            const data = JSON.parse(saved);
+            if (confirm('Ada data backup. Muat?')) {
+                products = data.products || products;
+                transactions = data.transactions || [];
+                cart = data.cart || [];
             }
-            lastTouchEnd = now;
-        }, { passive: false });
+        }
+        
+        renderAll();
+        updateLastSaveDisplay();
 
-        // 4. Mencegah gesture zoom
-        document.addEventListener('gesturestart', function(e) {
-            e.preventDefault();
-        });
-
-        document.addEventListener('gesturechange', function(e) {
-            e.preventDefault();
-        });
-
-        document.addEventListener('gestureend', function(e) {
-            e.preventDefault();
-        });
-
-        // 5. Handle keyboard muncul di mobile
-        window.addEventListener('resize', function() {
-            // Scroll ke input yang aktif jika keyboard muncul
-            if (document.activeElement.tagName === 'INPUT') {
-                setTimeout(() => {
-                    document.activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 300);
-            }
-        });
-
-        // Initialize
-        renderProducts();
+        // Expose functions
+        window.openDataManager = openDataManager;
+        window.closeDataManager = closeDataManager;
+        window.switchFormat = switchFormat;
+        window.exportToExcel = exportToExcel;
+        window.importFromExcel = importFromExcel;
+        window.downloadTemplateExcel = downloadTemplateExcel;
+        window.saveToFile = saveToFile;
+        window.loadFromFile = loadFromFile;
+        window.saveToLocalStorage = saveToLocalStorage;
+        window.resetAllData = resetAllData;
+        window.addToCart = addToCart;
+        window.updateQuantity = updateQuantity;
+        window.removeFromCart = removeFromCart;
+        window.clearCart = clearCart;
+        window.calculateChange = calculateChange;
+        window.processCheckout = processCheckout;
+        window.closeReceipt = closeReceipt;
     </script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>POS System - Aplikasi Kasir</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -10,6 +10,19 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            /* Mencegah pull-to-refresh dan overscroll bounce */
+            overscroll-behavior: none;
+            -webkit-overscroll-behavior: none;
+        }
+
+        /* Mencegah scroll bounce di iOS */
+        html, body {
+            position: fixed;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            /* Mencegah elastic scrolling di iOS */
+            -webkit-overflow-scrolling: auto;
         }
 
         :root {
@@ -28,8 +41,24 @@
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
             color: var(--dark);
+            /* Mencegah touch callout dan selection yang tidak diinginkan */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            /* Mencegah pull-to-refresh khusus Chrome Android */
+            overscroll-behavior-y: none;
+        }
+
+        /* Container utama dengan scroll yang terkontrol */
+        .app-container {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            /* Mencegah scroll chaining */
+            overscroll-behavior: contain;
         }
 
         .container {
@@ -39,7 +68,7 @@
             display: grid;
             grid-template-columns: 1fr 400px;
             gap: 20px;
-            min-height: 100vh;
+            min-height: min-content;
         }
 
         /* Header */
@@ -54,6 +83,10 @@
             justify-content: space-between;
             align-items: center;
             animation: slideDown 0.5s ease;
+            /* Mencegah header ikut terscroll */
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         @keyframes slideDown {
@@ -116,6 +149,8 @@
             flex-direction: column;
             gap: 20px;
             animation: fadeIn 0.6s ease;
+            /* Mencegah overscroll di dalam konten */
+            overscroll-behavior: contain;
         }
 
         @keyframes fadeIn {
@@ -136,6 +171,9 @@
             font-size: 16px;
             transition: all 0.3s;
             background: white;
+            /* Mengizinkan selection di input */
+            -webkit-user-select: text;
+            user-select: text;
         }
 
         .search-bar:focus {
@@ -159,6 +197,15 @@
             gap: 10px;
             overflow-x: auto;
             padding-bottom: 5px;
+            /* Mencegah scroll chaining ke window */
+            overscroll-behavior-x: contain;
+            /* Hide scrollbar tapi tetap bisa scroll */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .category-filter::-webkit-scrollbar {
+            display: none;
         }
 
         .category-btn {
@@ -171,6 +218,8 @@
             transition: all 0.3s;
             white-space: nowrap;
             font-size: 14px;
+            /* Mencegah highlight saat tap */
+            -webkit-tap-highlight-color: transparent;
         }
 
         .category-btn:hover, .category-btn.active {
@@ -186,6 +235,8 @@
             flex: 1;
             overflow-y: auto;
             max-height: calc(100vh - 350px);
+            /* Mencegah overscroll */
+            overscroll-behavior: contain;
         }
 
         .products-grid {
@@ -203,6 +254,9 @@
             transition: all 0.3s;
             position: relative;
             overflow: hidden;
+            /* Mencegah highlight saat tap */
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .product-card:hover {
@@ -277,6 +331,8 @@
             flex-direction: column;
             height: fit-content;
             animation: slideIn 0.6s ease;
+            /* Mencegah overscroll */
+            overscroll-behavior: contain;
         }
 
         @keyframes slideIn {
@@ -318,6 +374,8 @@
             cursor: pointer;
             font-size: 13px;
             transition: all 0.3s;
+            /* Mencegah highlight saat tap */
+            -webkit-tap-highlight-color: transparent;
         }
 
         .clear-cart:hover {
@@ -331,6 +389,8 @@
             max-height: 400px;
             overflow-y: auto;
             margin-bottom: 20px;
+            /* Mencegah overscroll */
+            overscroll-behavior: contain;
         }
 
         .cart-item {
@@ -395,6 +455,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            /* Mencegah highlight saat tap */
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .qty-btn:hover {
@@ -414,6 +477,8 @@
             cursor: pointer;
             padding: 5px;
             transition: all 0.2s;
+            /* Mencegah highlight saat tap */
+            -webkit-tap-highlight-color: transparent;
         }
 
         .remove-item:hover {
@@ -481,6 +546,9 @@
             font-weight: 700;
             text-align: right;
             transition: all 0.3s;
+            /* Mengizinkan selection di input */
+            -webkit-user-select: text;
+            user-select: text;
         }
 
         .payment-input:focus {
@@ -523,6 +591,9 @@
             cursor: pointer;
             transition: all 0.3s;
             box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
+            /* Mencegah highlight saat tap */
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .checkout-btn:hover:not(:disabled) {
@@ -549,6 +620,8 @@
             align-items: center;
             justify-content: center;
             backdrop-filter: blur(5px);
+            /* Mencegah scroll di modal */
+            overscroll-behavior: none;
         }
 
         .modal.show {
@@ -603,6 +676,8 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+            /* Mencegah highlight saat tap */
+            -webkit-tap-highlight-color: transparent;
         }
 
         .modal-btn:hover {
@@ -622,6 +697,8 @@
             z-index: 2000;
             align-items: center;
             justify-content: center;
+            /* Mencegah scroll di receipt */
+            overscroll-behavior: none;
         }
 
         .receipt.show {
@@ -635,6 +712,10 @@
             font-family: 'Courier New', monospace;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+            /* Mencegah overscroll */
+            overscroll-behavior: contain;
         }
 
         .receipt-paper::before {
@@ -748,6 +829,8 @@
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s;
+            /* Mencegah highlight saat tap */
+            -webkit-tap-highlight-color: transparent;
         }
 
         .print-btn {
@@ -764,6 +847,7 @@
         @media (max-width: 1024px) {
             .container {
                 grid-template-columns: 1fr;
+                padding: 10px;
             }
             
             .cart-section {
@@ -775,119 +859,139 @@
                 border-radius: 20px 20px 0 0;
                 z-index: 100;
             }
+
+            .header {
+                padding: 15px 20px;
+            }
+
+            .datetime .time {
+                font-size: 20px;
+            }
         }
 
         /* Scrollbar Styling */
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
         }
 
         ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
+            background: transparent;
         }
 
         ::-webkit-scrollbar-thumb {
             background: var(--primary);
-            border-radius: 4px;
+            border-radius: 3px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
             background: var(--primary-dark);
         }
+
+        /* Mencegah text selection di seluruh app kecuali input */
+        .app-container {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* Utility untuk touch action */
+        .no-touch-action {
+            touch-action: none;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <div class="logo">
-                <div class="logo-icon">POS</div>
-                <div>
-                    <h1>Quick<span>Sale</span></h1>
-                    <small>Sistem Point of Sale</small>
+    <div class="app-container" id="appContainer">
+        <div class="container">
+            <!-- Header -->
+            <div class="header">
+                <div class="logo">
+                    <div class="logo-icon">POS</div>
+                    <div>
+                        <h1>Quick<span>Sale</span></h1>
+                        <small>Sistem Point of Sale</small>
+                    </div>
                 </div>
-            </div>
-            <div class="datetime">
-                <div class="time" id="clock">00:00</div>
-                <div class="date" id="date">Loading...</div>
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Search -->
-            <div class="search-container">
-                <span class="search-icon">🔍</span>
-                <input type="text" class="search-bar" id="searchInput" placeholder="Cari produk...">
-            </div>
-
-            <!-- Categories -->
-            <div class="category-filter" id="categoryFilter">
-                <button class="category-btn active" data-category="all">Semua</button>
-                <button class="category-btn" data-category="makanan">Makanan</button>
-                <button class="category-btn" data-category="minuman">Minuman</button>
-                <button class="category-btn" data-category="snack">Snack</button>
-                <button class="category-btn" data-category="kebutuhan">Kebutuhan</button>
-            </div>
-
-            <!-- Products -->
-            <div class="products-section">
-                <div class="products-grid" id="productsGrid">
-                    <!-- Products will be inserted here -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Cart Section -->
-        <div class="cart-section">
-            <div class="cart-header">
-                <div class="cart-title">
-                    🛒 Keranjang
-                    <span class="cart-count" id="cartCount">0</span>
-                </div>
-                <button class="clear-cart" onclick="clearCart()">Kosongkan</button>
-            </div>
-
-            <div class="cart-items" id="cartItems">
-                <div class="empty-cart">
-                    <div class="empty-cart-icon">🛒</div>
-                    <p>Keranjang masih kosong</p>
-                    <small>Tap produk untuk menambahkan</small>
+                <div class="datetime">
+                    <div class="time" id="clock">00:00</div>
+                    <div class="date" id="date">Loading...</div>
                 </div>
             </div>
 
-            <div class="cart-summary">
-                <div class="summary-row">
-                    <span>Subtotal</span>
-                    <span id="subtotal">Rp 0</span>
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Search -->
+                <div class="search-container">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-bar" id="searchInput" placeholder="Cari produk...">
                 </div>
-                <div class="summary-row">
-                    <span>PPN (10%)</span>
-                    <span id="tax">Rp 0</span>
+
+                <!-- Categories -->
+                <div class="category-filter" id="categoryFilter">
+                    <button class="category-btn active" data-category="all">Semua</button>
+                    <button class="category-btn" data-category="makanan">Makanan</button>
+                    <button class="category-btn" data-category="minuman">Minuman</button>
+                    <button class="category-btn" data-category="snack">Snack</button>
+                    <button class="category-btn" data-category="kebutuhan">Kebutuhan</button>
                 </div>
-                <div class="summary-row discount" id="discountRow" style="display: none;">
-                    <span>Diskon</span>
-                    <span id="discount">-Rp 0</span>
-                </div>
-                <div class="summary-row total">
-                    <span>TOTAL</span>
-                    <span id="total">Rp 0</span>
+
+                <!-- Products -->
+                <div class="products-section" id="productsSection">
+                    <div class="products-grid" id="productsGrid">
+                        <!-- Products will be inserted here -->
+                    </div>
                 </div>
             </div>
 
-            <div class="payment-section">
-                <div class="payment-label">Bayar (Rp)</div>
-                <input type="number" class="payment-input" id="paymentInput" placeholder="0" oninput="calculateChange()">
-                <div class="change-display" id="changeDisplay">
-                    Kembalian: <span id="changeAmount">Rp 0</span>
+            <!-- Cart Section -->
+            <div class="cart-section">
+                <div class="cart-header">
+                    <div class="cart-title">
+                        🛒 Keranjang
+                        <span class="cart-count" id="cartCount">0</span>
+                    </div>
+                    <button class="clear-cart" onclick="clearCart()">Kosongkan</button>
                 </div>
-            </div>
 
-            <button class="checkout-btn" id="checkoutBtn" onclick="processCheckout()" disabled>
-                BAYAR SEKARANG
-            </button>
+                <div class="cart-items" id="cartItems">
+                    <div class="empty-cart">
+                        <div class="empty-cart-icon">🛒</div>
+                        <p>Keranjang masih kosong</p>
+                        <small>Tap produk untuk menambahkan</small>
+                    </div>
+                </div>
+
+                <div class="cart-summary">
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span id="subtotal">Rp 0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>PPN (10%)</span>
+                        <span id="tax">Rp 0</span>
+                    </div>
+                    <div class="summary-row discount" id="discountRow" style="display: none;">
+                        <span>Diskon</span>
+                        <span id="discount">-Rp 0</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>TOTAL</span>
+                        <span id="total">Rp 0</span>
+                    </div>
+                </div>
+
+                <div class="payment-section">
+                    <div class="payment-label">Bayar (Rp)</div>
+                    <input type="number" class="payment-input" id="paymentInput" placeholder="0" oninput="calculateChange()">
+                    <div class="change-display" id="changeDisplay">
+                        Kembalian: <span id="changeAmount">Rp 0</span>
+                    </div>
+                </div>
+
+                <button class="checkout-btn" id="checkoutBtn" onclick="processCheckout()" disabled>
+                    BAYAR SEKARANG
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1236,6 +1340,78 @@
         function closeModal() {
             document.getElementById('successModal').classList.remove('show');
         }
+
+        // ============================================
+        // PENCEGAHAN PULL-TO-REFRESH DAN OVERSCROLL
+        // ============================================
+
+        // 1. Mencegah pull-to-refresh di Chrome Android
+        let touchStartY = 0;
+        let touchEndY = 0;
+        
+        document.addEventListener('touchstart', function(e) {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        document.addEventListener('touchmove', function(e) {
+            touchEndY = e.touches[0].clientY;
+            
+            // Cek apakah scroll sudah di top
+            const appContainer = document.getElementById('appContainer');
+            const isAtTop = appContainer.scrollTop === 0;
+            const isPullingDown = touchEndY > touchStartY;
+            
+            // Jika di top dan menarik ke bawah, cegah default behavior
+            if (isAtTop && isPullingDown && e.cancelable) {
+                e.preventDefault();
+            }
+            
+            // Cegah bounce effect di iOS
+            const isAtBottom = (appContainer.scrollHeight - appContainer.scrollTop) === appContainer.clientHeight;
+            const isPullingUp = touchEndY < touchStartY;
+            
+            if (isAtBottom && isPullingUp && e.cancelable) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // 2. Mencegah refresh saat swipe down di header
+        document.querySelector('.header').addEventListener('touchmove', function(e) {
+            if (e.cancelable) e.preventDefault();
+        }, { passive: false });
+
+        // 3. Mencegah double tap zoom
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+
+        // 4. Mencegah gesture zoom
+        document.addEventListener('gesturestart', function(e) {
+            e.preventDefault();
+        });
+
+        document.addEventListener('gesturechange', function(e) {
+            e.preventDefault();
+        });
+
+        document.addEventListener('gestureend', function(e) {
+            e.preventDefault();
+        });
+
+        // 5. Handle keyboard muncul di mobile
+        window.addEventListener('resize', function() {
+            // Scroll ke input yang aktif jika keyboard muncul
+            if (document.activeElement.tagName === 'INPUT') {
+                setTimeout(() => {
+                    document.activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            }
+        });
 
         // Initialize
         renderProducts();
